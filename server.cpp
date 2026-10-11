@@ -3,6 +3,8 @@
 #include <unistd.h>     
 #include <cstring>
 #include <iostream>
+#include <thread>
+#include <mutex>
 
 int DEFAULT_CHAT_PORT = 5000;
 int DEFAULT_HTTP_PORT = 8080;
@@ -118,6 +120,42 @@ int Bind_Serv(int chat_port){
 }
 
 
+std::mutex policia;
+
+void Manage_Client(int fd_cli_socket){
+    char buffer[512] = {0};
+
+    size_t n = recv(fd_cli_socket, buffer, 512, 0);
+    if (n < 0){
+        std::cerr << "ERROR: hubo un problema al recibir el mensaje: " << errno << "\n";
+        close(fd_cli_socket);
+        return;
+    }
+    
+    if(n == 0){
+        // el cliente cerro la coneccion TCP sin hacer el quit
+        close(fd_cli_socket);
+        return;
+    }
+    
+    // esta nomenclatura cheverisima nojoda
+    {
+        std::lock_guard<std::mutex> lock(policia);
+        std::cout << buffer << "\n";
+    }
+
+    
+
+    n = send(fd_cli_socket, "recibido", 9, 0);
+    if (n < 0){
+        std::cerr << "ERROR: hubo un problema al hacer acuse de recibido: " << errno << "\n";
+        close(fd_cli_socket);
+        return;
+    }
+
+    close(fd_cli_socket);
+}
+
 int main(int argc, char* argv[]){
 
     // ----- capturamos input ---------
@@ -146,37 +184,35 @@ int main(int argc, char* argv[]){
     //-----------BINDEO DEL SERVIDOR----------------
     //______________________________________________
 
-    sockaddr_in client_addr;
     // el estandar dice que el tamano de la cola debe ser 5, y que si ponemos
     // un socket valido, el codigo no puede fallar, tonces no hace falta verificar
     listen(fd_socket, 5);
-
-    // el tamaño en bytes del addr del cliente , en el estandar lo definen siempre
-    // como un int, pero no fnciona asi, hay otros sitios que directamente le ponen el tipo de 
-    // socklen_t pero el mimo dice que es un unsigned int, y hay sitios que ponen el u_int, tal
-    // parece que son intercambiables
-    socklen_t client_len = sizeof(client_addr);
-
-
-    int fd_cli_socket = accept(fd_socket, (sockaddr*)&client_addr, &client_len);
-
     
-    char buffer[512] = {0};
+    while (true)
+    {
+        
+        sockaddr_in client_addr;
+        // el tamaño en bytes del addr del cliente , en el estandar lo definen siempre
+        // como un int, pero no fnciona asi, hay otros sitios que directamente le ponen el tipo de 
+        // socklen_t pero el mimo dice que es un unsigned int, y hay sitios que ponen el u_int, tal
+        // parece que son intercambiables
+        socklen_t client_len = sizeof(client_addr);
 
-    size_t n = recv(fd_cli_socket, buffer, 512, 0);
-    if (n < 0){
-        std::cerr << "ERROR: hubo un problema al recibir el mensaje: " << errno << "\n";
+
+        int fd_cli_socket = accept(fd_socket, (sockaddr*)&client_addr, &client_len);
+
+        {
+            std::lock_guard<std::mutex> lock(policia);
+            std::cout << "aceptamos un cliente nuevo" << "\n";
+        }
+
+
+        std::thread client_handler(Manage_Client, fd_cli_socket);
+        
+        client_handler.detach();
+
+
     }
-    printf("el buf %s", buffer);
-
-    
-
-    n = send(fd_cli_socket, "recibido", 9, 0);
-    if (n < 0){
-        std::cerr << "ERROR: hubo un problema al hacer acuse de recibido: " << errno << "\n";
-    }
-
-    close(fd_cli_socket);
     close(fd_socket);
 
 
