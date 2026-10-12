@@ -10,6 +10,26 @@
 int DEFAULT_SERVER_PORT = 5000;
 char* DEFAULT_SERVER_IP = "localhost";
 
+
+const int QUIT = 299;
+const int NEW_MSG = 300;
+const int MSG_PRIV_O = 301;
+const int WARNING_MOV = 302;
+const int MAIL_MSG = 303;
+const int SERVER_BUSY = 421;
+const int NICK_INVALID = 433;
+const int NOT_MEMBER = 442;
+const int INVALID_CMD = 500;
+const int INVALID_SINTAX = 501;
+const int LINE_OVERFLOW = 502;
+const int NOT_SINGUP = 530;
+const int NICK_NOT_EXISTS = 550;
+const int CHAN_NOT_EXISTS = 551;
+const int INDEX_NOT_MSG = 552;
+
+char CR = '\r';
+char LF = '\n';
+
 struct ip_port
 {
     int server_port;
@@ -69,7 +89,8 @@ int Connect_C2S(char * ip, int port){
 
     hostent *server;
     sockaddr_in serv_addr;
-    bzero((char *) &serv_addr, sizeof(serv_addr));
+    // bzero((char *) &serv_addr, sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
 
     // esta parte es lo mismo que en server
     serv_addr.sin_family = AF_INET;
@@ -129,29 +150,82 @@ int main(int argc, char* argv[]){
     //-----------CONEXION CLIENTE SERVIDOR----------
     //______________________________________________
 
-
-    char buffer[512] = {0};
-    buffer[0] = 'H';
-    buffer[1] = 'E';
-    buffer[2] = 'L';
-    buffer[3] = 'L';
-    buffer[4] = 'O';
+    // 512B de tamaño total de la line + 2B CRLF + 1B para null termination porsia las moscas
+    char buffer[515];
     
-    size_t n = send(fd_socket, buffer, 512, 0);
-    if (n < 0){
-        std::cerr << "ERROR: no logro enviar: " << errno << "\n";
-        return 1;
+    int op = 0;
+    while (op != QUIT)
+    {
+        std::string g;
+        memset(buffer, 0x00, sizeof(buffer));
+
+        // si se usa .at() para recorrer el string no se toma en cuenta el null termination
+        // osea, da un error, pero si se usa [] si se toma en cuenta, es decir, si puedo mostrar ese 0x00
+        // lo otro es que si aqui ocurre un error, se cierra la conexion repentinamente con el server
+        // y, gracias a dios, el server ya estaba preparado para eso
+
+        std::getline(std::cin, g);
+
+        // lenght() esta contando hasta null termination sin incluirlo, y empieza desde 1
+        // (no como indice)
+        
+        // entonces la linea va a tener:
+        //  max 4B    |    disponible 508B
+        // el comando + sus argumentos (incluido texto) 
+        // necesariamente nosotros debemos colocar el CRLF
+
+        if(g.length() > 512){
+            std::cerr << "ERROR: el tamaño maximo de la linea son 512B y te pasaste :P";
+            close(fd_socket);
+            return 1;
+        }
+
+        // esto no deberia dar core dumped primero porque el buffer es mas grande que g
+        // y porque al usar [] podriamos gozar del colchon de null termination, po lo que sea
+        int i = 0;
+        while (i < g.length())
+        {
+            buffer[i] = g[i];
+            i++;
+        }
+
+        // ---------------- CRLF ----------------------
+        // i queda en la ultima posicion disponible
+        buffer[i] = '\r';
+        buffer[i + 1] = '\n';
+        // ---------------- CRLF ----------------------
+
+
+        
+        size_t n = send(fd_socket, buffer, sizeof(buffer), 0);
+        if (n < 0){
+            std::cerr << "ERROR: no logro enviar: " << errno << "\n";
+            close(fd_socket);    
+            return 1;
+        }
+
+        
+        memset(buffer, 0x00, sizeof(buffer));
+        n = recv(fd_socket, buffer, sizeof(buffer), 0);
+        if (n < 0){
+            std::cerr << "ERROR: no logro obtener acuse de recibido: " << errno << "\n";
+            close(fd_socket);
+            return 1;
+        }
+
+        // el server siempre responde con un codigo de clase, da igual si es multi linea o no
+        op = 0;
+        op += (buffer[0] - 48) * 100;
+        op += (buffer[1] - 48) * 10;
+        op += (buffer[2] - 48);
+
+        
+
+        printf("%s\n", buffer);
+
     }
 
-    bzero(buffer, 512);
-    n = recv(fd_socket, buffer, 512, 0);
-    if (n < 0){
-        std::cerr << "ERROR: no logro obtener acuse de recivido: " << errno << "\n";
-        return 1;
-    }
-
-    printf("mensaje: %s", buffer);
-
+    
     close(fd_socket);
 
 
