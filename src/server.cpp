@@ -403,7 +403,7 @@ void Command_Handle(Client& c,const std::string& line){
                 reply(c,442,"No eres miembro");
                 return;
             }
-            std::string ev="300 "+target+" "+c.nick+" "+body+"\r\n";
+            std::string ev="300 " + target + " " + c.nick + ": " + body + "\r\n";
             if(ev.size()>512){
                 reply(c,501,"Texto excede limite del evento (incluye apodo)");
                 return;
