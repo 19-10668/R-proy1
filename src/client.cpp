@@ -2,7 +2,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <unistd.h>     
-#include <cstring>      // Para memset
+#include <cstring>
 #include <iostream>
 
 #include <arpa/inet.h>
@@ -37,7 +37,7 @@ struct ip_port
     int fail;
 };
 
-#include "common.hpp"  // AGREGADO: limites y validadores compartidos
+#include "common.hpp"
 #include <poll.h>
 #include <cerrno>
 
@@ -61,7 +61,7 @@ ip_port CatchInput(int argc, char* argv[]){
     else if(argc == 3){
         // este si se especifica otro ip puerto
         
-        // CORRECCION: atoi no detecta letras ni puertos fuera de rango.
+        
         try{
             server_port = port_number(argv[2]);
         }
@@ -90,14 +90,13 @@ int Connect_C2S(const char* ip, int port){
     // SOCK_STREAM es que vamos a usar TCP para comunicarnos
     // y el 0 no se que es pero segun es que lo que sea que se 
     // deba escojer se hace automatico, y es el estandar tonces asi se quedo
-    // ACLARACION: protocolo 0 pide el predeterminado para el tipo elegido (TCP).
-    // AGREGADO: getaddrinfo permite probar IPv4 o IPv6 sin cambiar el protocolo.
+
     int fd_socket = -1;
 
     addrinfo* server = nullptr;
     addrinfo serv_addr{};
     // bzero((char *) &serv_addr, sizeof(serv_addr));
-    // CORRECCION: {} ya inicializa toda la estructura a cero.
+
 
     // esta parte es lo mismo que en server
     serv_addr.ai_family = AF_UNSPEC;
@@ -107,7 +106,7 @@ int Connect_C2S(const char* ip, int port){
     // queremos poder usar nombres ed host y no solo una ip cruda
     // tonces pormos usar este struct "hostent" para guarada alli la ip de un host
     // y esa ip la sacamos de usa esta funcion gethostname
-    // CORRECCION: gethostname devuelve el nombre local; getaddrinfo resuelve el destino.
+
     int result = getaddrinfo(ip, std::to_string(port).c_str(), &serv_addr, &server);
     if(result != 0){
         std::cerr << "ERROR: no se pudo obtener el host: " << gai_strerror(result) << "\n";
@@ -116,7 +115,7 @@ int Connect_C2S(const char* ip, int port){
 
 
     // esta funcion bcopy copia como strcpy, creo :P
-    // CORRECCION: bcopy copia bytes, no cadenas; aqui usamos directamente ai_addr.
+
 
     // a partir de aqui ya tenemos el serv_addr listo pa usarse
     for(addrinfo* address = server; address != nullptr; address = address->ai_next){
@@ -181,8 +180,7 @@ int main(int argc, char* argv[]){
     //______________________________________________
 
     // 512B de tamano total de la line + 2B CRLF + 1B para null termination porsia las moscas
-    // CORRECCION: el maximo son 512B INCLUYENDO CRLF; quedan 510B de contenido.
-    // AGREGADO: el buffer de lectura no limita una linea; MORROCOY_BUFFER lee bloques.
+
     try{
         bool keyboard=true,too_long=false;
         std::string g,in,out;
@@ -220,7 +218,7 @@ int main(int argc, char* argv[]){
                         if(!g.empty()&&g.back()=='\r')g.pop_back();
                         // lenght() esta contando hasta null termination sin incluirlo, y empieza desde 1
                         // (no como indice)
-                        // ACLARACION: size/length cuenta bytes almacenados, sin terminador NUL.
+
 
                         // entonces la linea va a tener:
                         //  max 4B    |    disponible 508B
@@ -230,11 +228,11 @@ int main(int argc, char* argv[]){
 
                         // esto no deberia dar core dumped primero porque el buffer es mas grande que g
                         // y porque al usar [] podriamos gozar del colchon de null termination, po lo que sea
-                        // CORRECCION: string administra su memoria; no leemos fuera de sus limites.
+
 
                         // ---------------- CRLF ----------------------
                         // i queda en la ultima posicion disponible
-                        // AGREGADO: concatenamos CRLF sin copiar bytes sobrantes del buffer.
+
                         if(!too_long&&g.size()<=510&&utf8(g))out+=g+"\r\n";
                         else std::cerr<<"Linea invalida: UTF-8 y maximo 510 bytes antes de CRLF\n";
                         // ---------------- CRLF ----------------------
@@ -273,7 +271,7 @@ int main(int argc, char* argv[]){
                         in.erase(0,p+2);
                         std::cout<<line<<std::endl;
                         // el server siempre responde con un codigo de clase, da igual si es multi linea o no
-                        // AGREGADO: se reconoce el codigo solo despues de reunir la linea completa.
+
                         if(line.size() >= 4 && line[3] == ' ' &&
                            line[0] >= '0' && line[0] <= '9' &&
                            line[1] >= '0' && line[1] <= '9' &&
