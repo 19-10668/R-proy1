@@ -2,11 +2,9 @@ CXX ?= g++
 CXXFLAGS ?= -std=c++17 -O2 -Wall -Wextra -Wpedantic
 .PHONY: all clean test
 all: server client
-server: server.cpp common.hpp
-	$(CXX) $(CXXFLAGS) server.cpp -o server
-client: client.cpp common.hpp
-	$(CXX) $(CXXFLAGS) client.cpp -o client
-test: all
-	python3 tests/test_project.py
+server: src/server.cpp src/common.hpp
+	$(CXX) $(CXXFLAGS) src/server.cpp -o servidor
+client: src/client.cpp src/common.hpp
+	$(CXX) $(CXXFLAGS) src/client.cpp -o cliente
 clean:
-	rm -f server client
+	rm -f servidor cliente

@@ -3,7 +3,7 @@
 #include <unistd.h>     
 #include <cstring>
 #include <iostream>
-#include <thread>
+
 #include <mutex>
 
 int DEFAULT_CHAT_PORT = 5000;
@@ -121,21 +121,21 @@ chat_http_mail CatchInput(int argc, char* argv[]){
 
     try{
     if (c > 0)
-{
+    {
         chat_port = port_number(argv[c]);
     }
     else{
         chat_port = DEFAULT_CHAT_PORT;
     }
     if (h > 0)
-{
+    {
         http_port = port_number(argv[h]);
     }
     else{
         http_port = DEFAULT_HTTP_PORT;
     }
     if (b > 0)
-{
+    {
         mail = argv[b];
     }
     else{
@@ -619,9 +619,10 @@ int main(int argc,char** argv){
         std::cout<<"Chat "<<chat_port<<", HTTP "<<http_port<<", buzones "<<root<<std::endl;
         while(running){
             std::vector<pollfd> fds{
-{
+                {
                     fd_socket,POLLIN,0
-                },{
+                },
+                {
                     fd_http_socket,POLLIN,0
                 }
             };

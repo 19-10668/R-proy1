@@ -190,9 +190,10 @@ int main(int argc, char* argv[]){
         int op = 0;
         while(op != QUIT){
             pollfd fds[2]{
-{
+                {
                     fd_socket,short(POLLIN|(sent<out.size()?POLLOUT:0)),0
-                },{
+                },
+                {
                     keyboard?STDIN_FILENO:-1,POLLIN,0
                 }
             };
@@ -204,8 +205,7 @@ int main(int argc, char* argv[]){
             // osea, da un error, pero si se usa [] si se toma en cuenta, es decir, si puedo mostrar ese 0x00
             // lo otro es que si aqui ocurre un error, se cierra la conexion repentinamente con el server
             // y, gracias a dios, el server ya estaba preparado para eso
-            // ACLARACION: at verifica limites; no dependemos de ningun byte fuera del contenido.
-            // AGREGADO: poll y read reemplazan getline para no frenar los eventos del socket.
+
             if(fds[1].revents&(POLLIN|POLLHUP)){
                 char buffer[MORROCOY_BUFFER];
                 ssize_t n=read(STDIN_FILENO,buffer,sizeof buffer);
@@ -247,29 +247,29 @@ int main(int argc, char* argv[]){
                 else if(errno!=EINTR)throw std::runtime_error("stdin");
                 if(out.size()-sent>1024*1024)throw std::runtime_error("Demasiados comandos pendientes");
             }
-            if(fds[0].revents&POLLOUT&&sent<out.size()){
-                ssize_t n=send(fd_socket,out.data()+sent,out.size()-sent,MSG_NOSIGNAL);
-                if(n>0){
-                    sent+=size_t(n);
-                    if(sent==out.size()){
+            if(fds[0].revents&POLLOUT&& sent < out.size()){
+                ssize_t n = send(fd_socket, out.data()+sent, out.size()-sent,MSG_NOSIGNAL);
+                if(n > 0){
+                    sent += size_t(n);
+                    if(sent == out.size()){
                         out.clear();
-                        sent=0;
+                        sent = 0;
                     }
                 }
-                else if(n<0&&errno!=EINTR&&errno!=EAGAIN)throw std::runtime_error("send");
+                else if(n < 0 && errno!=EINTR && errno!=EAGAIN) throw std::runtime_error("send");
             }
             if(fds[0].revents&POLLIN){
                 char buffer[MORROCOY_BUFFER];
-                ssize_t n=recv(fd_socket,buffer,sizeof buffer,0);
-                if(n==0)break;
-                if(n<0){
-                    if(errno!=EAGAIN&&errno!=EINTR)throw std::runtime_error("recv");
+                ssize_t n = recv(fd_socket,buffer,sizeof buffer,0);
+                if(n == 0)break;
+                if(n < 0){
+                    if(errno != EAGAIN && errno != EINTR)throw std::runtime_error("recv");
                 }
                 else{
                     in.append(buffer,size_t(n));
                     size_t p;
-                    while((p=in.find("\r\n"))!=std::string::npos){
-                        auto line=in.substr(0,p);
+                    while((p = in.find("\r\n")) != std::string::npos){
+                        auto line = in.substr(0,p);
                         in.erase(0,p+2);
                         std::cout<<line<<std::endl;
                         // el server siempre responde con un codigo de clase, da igual si es multi linea o no
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]){
                             return 0;
                         }
                     }
-                    if(in.size()>65536)throw std::runtime_error("Servidor envia linea sin delimitador");
+                    if(in.size() > 65536)throw std::runtime_error("Servidor envia linea sin delimitador");
                 }
             }
             if(fds[0].revents&(POLLERR|POLLNVAL))throw std::runtime_error("Socket cerrado");
