@@ -21,29 +21,32 @@ La especificación formal de la sintaxis utiliza la Notación RFC 5234.
 
 ### Reglas Léxicas del cliente
 
-```
-nickname       = 1*16( ALPHA / NUM / "-" )
-channel        = "#" 1*32( ALPHA (sin acentos) / NUM / "-" ) ;
-text           = *( UTF8-CHAR ) ; Texto sin CRLF
-msg-id     = 1*NUM ; Identificador numérico de mensaje
-```
+| tipo | Descripcion |
+| :--- | :--- |
+| nickname | 1*16( ALPHA / NUM / "-" ) |
+| channel | "#" 1*32( ALPHA (sin acentos) / NUM / "-" ) |
+| text | *( UTF8-CHAR ), Texto sin CRLF |
+| msg-id | 1*NUM, Identificador numérico de mensaje |
+
 
 ### Sintaxis de los Comandos del Cliente 
 
-```
-nick       = "NICK" nickname 
-join       = "JOIN" channel 
-part       = "PART" channel 
-msg        = "MSG" channel text 
-priv       = "PRIV" nickname text 
-chans      = "CHANS" 
-who        = "WHO" channel 
-stat       = "STAT" 
-list       = "LIST" 
-retr       = "RETR" msg-id 
-dele       = "DELE" msg-id 
-quit       = "QUIT" 
-```
+
+| comando | modo de uso|
+| :--- | :--- |
+| nick | "NICK" nickname |
+| join | "JOIN" channel |
+| part | "PART" channel |
+| msg | "MSG" channel text |
+| priv | "PRIV" nickname text |
+| chans | "CHANS" |
+| who | "WHO" channel |
+| stat | "STAT" |
+| list | "LIST" |
+| retr | "RETR" msg-id |
+| dele | "DELE" msg-id |
+| quit | "QUIT" |
+
 
 ---
 
@@ -57,11 +60,12 @@ Los códigos de estado están categorizados numéricamente según la clase de re
 
 ### Reglas Lexicas del Servidor
 
-```
-code    = 3DIGIT
-single-line    = code text
-multi-line     = *( code-text ) code text 
-```
+| tipo | Descripcion |
+| :--- | :--- |
+|code | 3DIGIT |
+|single-line | code text |
+|multi-line | *( code-text ) code text |
+
 
 ### Tabla de Codigos
 
