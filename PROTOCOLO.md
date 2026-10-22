@@ -7,10 +7,10 @@ El Protocolo de Chat CI-4835 es un protocolo de capa de aplicación basado en te
 ### Reglas de Sintaxis
 
 1. **Codificación:** Todo el texto intercambiado DEBE estar codificado en UTF-8.
-2. **Delimitación de Líneas:** Cada comando del cliente y respuesta del servidor DEBE finalizar estrictamente con la secuencia CRLF (`\r\n`).
+2. **Delimitación de Líneas:** Cada comando del cliente y respuesta del servidor DEBE finalizar estrictamente con la secuencia CRLF (\r\n).
 3. **Longitud Máxima:** Las líneas enviadas por el cliente NO DEBEN exceder los 512 bytes, incluyendo la secuencia CRLF final. Las respuestas del servidor pueden exceder este límite.
 4. **Insensibilidad a Mayúsculas/Minúsculas:** Los nombres de los comandos NO distinguen entre mayúsculas y minúsculas
-5. **Separación de Argumentos:** Los argumentos de los comandos se separan por un único espacio (`0x20`). El último argumento (generalmente texto) PUEDE contener espacios.
+5. **Separación de Argumentos:** Los argumentos de los comandos se separan por un único espacio (0x20). El último argumento (generalmente texto) PUEDE contener espacios.
 6. **Formato de Respuestas Multilínea:** Sigue la convención de SMTP (RFC 5321). 
 
 ---
@@ -23,10 +23,10 @@ La especificación formal de la sintaxis utiliza la Notación RFC 5234.
 
 | tipo | Descripcion |
 | :--- | :--- |
-| nickname | 1*16( ALPHA / NUM / "-" ) |
-| channel | "#" 1*32( ALPHA (sin acentos) / NUM / "-" ) |
-| text | *( UTF8-CHAR ), Texto sin CRLF |
-| msg-id | 1*NUM, Identificador numérico de mensaje |
+| nickname | 1*16( ALPHA / digitos / "-" ) |
+| channel | "#" 1*32( ALPHA (sin acentos) / digitos / "-" ) |
+| text | ( UTF8-CHAR ), Texto sin CRLF |
+| msg-id | 1 digitos, Identificador numérico de mensaje |
 
 
 ### Sintaxis de los Comandos del Cliente 
@@ -62,9 +62,9 @@ Los códigos de estado están categorizados numéricamente según la clase de re
 
 | tipo | Descripcion |
 | :--- | :--- |
-|code | 3DIGIT |
+|code | 3 digitos |
 |single-line | code text |
-|multi-line | *( code-text ) code text |
+|multi-line | code text |
 
 
 ### Tabla de Codigos
