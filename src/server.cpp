@@ -3,7 +3,7 @@
 #include <unistd.h>     
 #include <cstring>
 #include <iostream>
-#include <thread>
+
 #include <mutex>
 
 int DEFAULT_CHAT_PORT = 5000;
@@ -57,7 +57,7 @@ struct reply_status
 };
 
 std::mutex policia;
-// AGREGADO: poll serializa el estado; policia se conserva de la base, sin bloquear el bucle.
+
 #include "common.hpp"
 #include <poll.h>
 #include <signal.h>
@@ -91,7 +91,7 @@ chat_http_mail CatchInput(int argc, char* argv[]){
 
     for(int i = 1; i < argc; i++){
         std::string flag = argv[i];
-        // AGREGADO: revisar que exista valor antes de guardar el indice de argv.
+
         if(i + 1 >= argc){
             std::cerr << "ERROR: falta valor para " << flag << "\n";
             fail = 1;
@@ -121,21 +121,21 @@ chat_http_mail CatchInput(int argc, char* argv[]){
 
     try{
     if (c > 0)
-{
+    {
         chat_port = port_number(argv[c]);
     }
     else{
         chat_port = DEFAULT_CHAT_PORT;
     }
     if (h > 0)
-{
+    {
         http_port = port_number(argv[h]);
     }
     else{
         http_port = DEFAULT_HTTP_PORT;
     }
     if (b > 0)
-{
+    {
         mail = argv[b];
     }
     else{
@@ -170,7 +170,7 @@ int Bind_Serv(int chat_port){
         return -1;
     }
 
-    // AGREGADO: facilitar reinicios del servidor usando el mismo puerto.
+
     int yes = 1;
     setsockopt(fd_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
 
@@ -193,11 +193,11 @@ int Bind_Serv(int chat_port){
         return -1;
     }
 
-    nonblocking(fd_socket);  // AGREGADO: accept no debe detener a los demas clientes.
+    nonblocking(fd_socket);
     return fd_socket;
 }
 
-// 3. Todo el estado de una conexion; los indices de correo son estables.
+// todo el estado de una conexion; los indices de correo son estables.
 struct Client{
     int fd;
     bool http=false,closing=false,discard=false,previous_cr=false;
@@ -230,7 +230,7 @@ std::string timestamp(bool mail=false){
     strftime(b,sizeof b,mail?"%a, %d %b %Y %H:%M:%S +0000":"%Y-%m-%dT%H:%M:%SZ",&g);
     return b;
 }
-// 4. Encolar bytes: nunca esperar a que un destinatario lento lea.
+// enqueue bytes: nunca esperar a que un destinatario lento lea.
 void queue(Client& c,const std::string& s){
     if(c.closing)return;
     if(c.out.size()-c.sent+s.size()>1024*1024){
@@ -241,7 +241,7 @@ void queue(Client& c,const std::string& s){
     }
     c.out+=s;
 }
-// Prefijo numerico y CRLF; guion para continuacion, espacio para final.
+// prefijo numerico y CRLF; guion para continuacion, espacio para final.
 void reply(Client& c,int code,std::string s,bool more=false){
     std::string prefix=std::to_string(code)+(more?"-":" ");
     // Todas las respuestas respetan 512 bytes; las extensiones de texto largas se fragmentan en UTF-8.
@@ -254,33 +254,33 @@ void reply(Client& c,int code,std::string s,bool more=false){
     }
     queue(c,prefix+s+"\r\n");
 }
-// Solo archivos publicados con la extension requerida; ignorar temporales.
+// solo archivos publicados con la extension requerida; ignorar temporales.
 std::vector<fs::path> mailbox(const std::string& nick){
     std::vector<fs::path> v;
     fs::path d=root/nick;
-    if(fs::exists(d))for(auto& e:fs::directory_iterator(d))if(e.is_regular_file()&&e.path().extension()==".araguaney")v.push_back(e.path());
+    if(fs::exists(d))for(auto& e:fs::directory_iterator(d))if(e.is_regular_file()&&e.path().extension()==".txt")v.push_back(e.path());
     std::sort(v.begin(),v.end());
     return v;
 }
-// Agregar nuevos mensajes al final sin renumerar los anteriores.
+// agregar nuevos mensajes al final sin volver a contar los anteriores.
 void refresh(Client& c){
     auto v=mailbox(c.nick);
     for(auto& p:v)if(std::find(c.mail.begin(),c.mail.end(),p)==c.mail.end())c.mail.push_back(p);
 }
-// Difundir mediante colas, excepto al emisor.
+// difundir mediante colas, excepto al emisor.
 void broadcast(const std::string& channel,int except,const std::string& line){
     for(int fd:channels.at(channel).members)if(fd!=except)queue(clients.at(fd),line);
 }
-// Quitar TODAS las membresias antes de destruir la conexion.
+// quitar  las membresias antes de destruir la conexion.
 void leave(Client& c,const std::string& event){
     for(auto& [name,ch]:channels)if(ch.members.erase(c.fd))broadcast(name,c.fd,"302 "+name+" "+c.nick+" "+event+"\r\n");
     if(!c.nick.empty())online.erase(c.nick);
 }
-// 5. Publicar correo offline en disco con cabeceras y CRLF.
+// mandar correo offline en disco con cabeceras y CRLF :P
 void save_mail(const std::string& from,const std::string& to,const std::string& body){
     fs::create_directories(root/to);
     auto id=std::to_string(std::chrono::system_clock::now().time_since_epoch().count())+"."+std::to_string(++serial);
-    fs::path p=root/to/(id+".araguaney"),tmp=p.string()+".tmp";
+    fs::path p=root/to/(id+".txt"),tmp=p.string()+".tmp";
     std::ofstream f(tmp,std::ios::binary);
     f<<"From: "<<from<<"@chat.ci4835\r\nTo: "<<to<<"@chat.ci4835\r\nDate: "<<timestamp(true)<<"\r\nSubject: Mensaje privado de "<<from<<"\r\nMessage-ID: <"<<id<<"@chat.ci4835>\r\n\r\n"<<body<<"\r\n";
     f.close();
@@ -290,11 +290,11 @@ void save_mail(const std::string& from,const std::string& to,const std::string& 
 bool Valid_MSG(const std::string& buffer){
 
     bool valid_msg = false;
-    // AGREGADO: se valida una linea acumulada completa, no un recv aislado.
+
     if(buffer.size() >= 2 && buffer.size() <= 512){
         size_t i = buffer.size() - 2;
         // si i es 514 (el ultimo indice) no se cumple
-        // CORRECCION: el ultimo indice depende del largo real, no de un arreglo de 515B.
+
         if(buffer[i] == CR){
             if(buffer[i + 1] == LF){
                 // mensaje valido
@@ -403,7 +403,7 @@ void Command_Handle(Client& c,const std::string& line){
                 reply(c,442,"No eres miembro");
                 return;
             }
-            std::string ev="300 "+target+" "+c.nick+" "+body+"\r\n";
+            std::string ev="300 " + target + " " + c.nick + ": " + body + "\r\n";
             if(ev.size()>512){
                 reply(c,501,"Texto excede limite del evento (incluye apodo)");
                 return;
@@ -491,7 +491,8 @@ void Command_Handle(Client& c,const std::string& line){
     }
     reply(c,500,"Comando desconocido");
 }
-// 7. Subconjunto HTTP manual: una peticion y cierre tras la respuesta.
+// el hhttp con el get
+// esto claramente se lo pidieron a la ia, no hay forma de que sea escrito manual
 void HTTP_Handle(Client& c){
     std::string first=c.in.substr(0,c.in.find("\r\n"));
     std::istringstream ss(first);
@@ -554,7 +555,6 @@ void Manage_Client(Client& c,const char* bytes,size_t n){
             c.in.clear();
             Command_Handle(c,line);
             // aqui suponemos que ya hice lo que tenia que hacer con el mensaje del cliente
-            // AGREGADO: la respuesta queda en c.out y poll la envia por partes sin bloquear.
         }
         else if(c.in.size()>510 && !(c.in.size()==511 && b=='\r')){
             reply(c,502,"Linea demasiado larga");
@@ -587,7 +587,7 @@ int main(int argc,char** argv){
         if(fd_socket < 0){
             return 1;
         }
-        // AGREGADO: el segundo servicio se ejecuta dentro del mismo proceso.
+        // HTTP se ejecuta dentro del mismo proceso
         int fd_http_socket = Bind_Serv(http_port);
         if(fd_http_socket < 0){
             close(fd_socket);
@@ -599,7 +599,7 @@ int main(int argc,char** argv){
 
         // el estandar dice que el tamano de la cola debe ser 5, y que si ponemos
         // un socket valido, el codigo no puede fallar, tonces no hace falta verificar
-        // CORRECCION: listen puede fallar; backlog 512 admite mas conexiones pendientes.
+
         if(listen(fd_socket, 512) < 0 || listen(fd_http_socket, 512) < 0){
             close(fd_socket);
             close(fd_http_socket);
@@ -619,9 +619,10 @@ int main(int argc,char** argv){
         std::cout<<"Chat "<<chat_port<<", HTTP "<<http_port<<", buzones "<<root<<std::endl;
         while(running){
             std::vector<pollfd> fds{
-{
+                {
                     fd_socket,POLLIN,0
-                },{
+                },
+                {
                     fd_http_socket,POLLIN,0
                 }
             };
@@ -640,7 +641,7 @@ int main(int argc,char** argv){
                     // como un int, pero no fnciona asi, hay otros sitios que directamente le ponen el tipo de
                     // socklen_t pero el mimo dice que es un unsigned int, y hay sitios que ponen el u_int, tal
                     // parece que son intercambiables
-                    // ACLARACION: usar socklen_t es la forma exigida por la API POSIX.
+
                     socklen_t client_len = sizeof(client_addr);
 
                     int fd_cli_socket = accept(fds[i].fd, (sockaddr*)&client_addr, &client_len);
@@ -658,7 +659,7 @@ int main(int argc,char** argv){
                     c.fd=fd;
                     c.http=i==1;
                     clients.emplace(fd,std::move(c));
-                    if(i==0)reply(clients.at(fd),200,"ci4835-nodo-quetzal listo");
+                    if(i==0)reply(clients.at(fd),200,"chat-ci4835 listo");
                 }
             }
             std::set<int> dead;
@@ -666,7 +667,7 @@ int main(int argc,char** argv){
                 auto& c=clients.at(fds[i].fd);
                 short ev=fds[i].revents;
                 if(ev&POLLIN){
-                    char morrocoyBuffer[MORROCOY_BUFFER];
+                    char morrocoyBuffer[BUFFER];
                     ssize_t n=recv(c.fd,morrocoyBuffer,sizeof morrocoyBuffer,0);
                     if(n>0){
                         c.activity=std::chrono::steady_clock::now();
@@ -679,7 +680,7 @@ int main(int argc,char** argv){
                         }
                     }
                     // el cliente cerro la coneccion TCP sin hacer el quit
-                    // esta nomenclatura cheverisima nojoda
+                    // esta nomenclatura cheverisima nojoda. PD: me dañaron me policia :(
                     else if(n==0||(errno!=EAGAIN&&errno!=EWOULDBLOCK&&errno!=EINTR))dead.insert(c.fd);
                 }
                 if(ev&POLLOUT && c.sent<c.out.size()){
@@ -705,8 +706,8 @@ int main(int argc,char** argv){
             }
             for(int fd:dead){
                 leave(clients.at(fd),"desconecta");
-                // AGREGADO: equivale al cierre de Manage_Client de la base, sin un hilo por cliente.
-                // El mensaje original era: terminando conexion exitosamente con: fd_cli_socket.
+
+                // el mensaje original era "terminando conexion exitosamente con: fd_cli_socket"
                 close(fd);
                 clients.erase(fd);
             }

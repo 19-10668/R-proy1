@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <fcntl.h>
 #include <cstdint>
-constexpr size_t MORROCOY_BUFFER = 4096;
+constexpr size_t BUFFER = 4096;
 inline int port_number(const std::string& s)  {
     if(s.empty() || s.find_first_not_of("0123456789") != std::string::npos) throw std::runtime_error("Puerto invalido");
     unsigned long n=std::stoul(s);
