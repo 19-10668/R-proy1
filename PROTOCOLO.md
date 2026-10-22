@@ -1,12 +1,8 @@
 # Especificación del Protocolo de Chat CI-4835
 
-## Estado de este Documento
-
-Este documento especifica la gramática formal y los códigos de respuesta del protocolo de chat orientado a texto desarrollado para la asignatura CI-4835 (Redes de Computadoras I, Universidad Simón Bolívar). 
-
 ## A) Visión General del Protocolo
 
-El Protocolo de Chat CI-4835 es un protocolo de capa de aplicación basado en texto, cliente-servidor y orientado a conexión que opera sobre TCP.
+El Protocolo de Chat CI-4835 es un protocolo de capa de aplicación basado en texto, cliente-servidor y orientado a conexión  TCP.
 
 ### Reglas de Sintaxis
 
@@ -26,10 +22,10 @@ La especificación formal de la sintaxis utiliza la Notación RFC 5234.
 ### Reglas Léxicas del cliente
 
 ```
-nickname       = 1*16( ALPHA / DIGIT / "-" )
-channel        = "#" 1*32( %x61-7A / DIGIT / "-" ) ; Canales en minúsculas [a-z0-9-]
+nickname       = 1*16( ALPHA / NUM / "-" )
+channel        = "#" 1*32( ALPHA (sin acentos) / NUM / "-" ) ;
 text           = *( UTF8-CHAR ) ; Texto sin CRLF
-msg-id     = 1*DIGIT ; Identificador numérico de mensaje
+msg-id     = 1*NUM ; Identificador numérico de mensaje
 ```
 
 ### Sintaxis de los Comandos del Cliente 
@@ -109,4 +105,5 @@ dentro de la carpeta src el archivo de cabecera commos.h coniene definiciones en
 
 existen dos casos a tratar:
 * **PRIV a uno mismo**: el cliente SI se puede hacer PRIV a si mismo (inspirado en whatsapp y telegram)
+* **Persitencia de canales** los canales no persisten, y cuando un cliente hace quit, se sale de los canales
 * **Interrupcion de escritura del cliente** si el servidor hace una notificacion asincrona mientras el cliente escribe, esta se sobrepone en su escritura, pero no la interrumpe, es decir, puede el cliente estar escibiendo un comando sin percatarse que fue cortado por el mensaje del servidor, que igual va a duncionar el comando del cliente si era valido 

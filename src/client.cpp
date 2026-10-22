@@ -205,7 +205,7 @@ int main(int argc, char* argv[]){
             // y, gracias a dios, el server ya estaba preparado para eso
 
             if(fds[1].revents&(POLLIN|POLLHUP)){
-                char buffer[MORROCOY_BUFFER];
+                char buffer[BUFFER];
                 ssize_t n=read(STDIN_FILENO,buffer,sizeof buffer);
                 if(n==0){
                     keyboard=false;
@@ -257,7 +257,7 @@ int main(int argc, char* argv[]){
                 else if(n < 0 && errno!=EINTR && errno!=EAGAIN) throw std::runtime_error("send");
             }
             if(fds[0].revents&POLLIN){
-                char buffer[MORROCOY_BUFFER];
+                char buffer[BUFFER];
                 ssize_t n = recv(fd_socket,buffer,sizeof buffer,0);
                 if(n == 0)break;
                 if(n < 0){

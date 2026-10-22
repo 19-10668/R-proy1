@@ -258,7 +258,7 @@ void reply(Client& c,int code,std::string s,bool more=false){
 std::vector<fs::path> mailbox(const std::string& nick){
     std::vector<fs::path> v;
     fs::path d=root/nick;
-    if(fs::exists(d))for(auto& e:fs::directory_iterator(d))if(e.is_regular_file()&&e.path().extension()==".araguaney")v.push_back(e.path());
+    if(fs::exists(d))for(auto& e:fs::directory_iterator(d))if(e.is_regular_file()&&e.path().extension()==".txt")v.push_back(e.path());
     std::sort(v.begin(),v.end());
     return v;
 }
@@ -280,7 +280,7 @@ void leave(Client& c,const std::string& event){
 void save_mail(const std::string& from,const std::string& to,const std::string& body){
     fs::create_directories(root/to);
     auto id=std::to_string(std::chrono::system_clock::now().time_since_epoch().count())+"."+std::to_string(++serial);
-    fs::path p=root/to/(id+".araguaney"),tmp=p.string()+".tmp";
+    fs::path p=root/to/(id+".txt"),tmp=p.string()+".tmp";
     std::ofstream f(tmp,std::ios::binary);
     f<<"From: "<<from<<"@chat.ci4835\r\nTo: "<<to<<"@chat.ci4835\r\nDate: "<<timestamp(true)<<"\r\nSubject: Mensaje privado de "<<from<<"\r\nMessage-ID: <"<<id<<"@chat.ci4835>\r\n\r\n"<<body<<"\r\n";
     f.close();
@@ -659,7 +659,7 @@ int main(int argc,char** argv){
                     c.fd=fd;
                     c.http=i==1;
                     clients.emplace(fd,std::move(c));
-                    if(i==0)reply(clients.at(fd),200,"ci4835-nodo-quetzal listo");
+                    if(i==0)reply(clients.at(fd),200,"chat-ci4835 listo");
                 }
             }
             std::set<int> dead;
@@ -667,7 +667,7 @@ int main(int argc,char** argv){
                 auto& c=clients.at(fds[i].fd);
                 short ev=fds[i].revents;
                 if(ev&POLLIN){
-                    char morrocoyBuffer[MORROCOY_BUFFER];
+                    char morrocoyBuffer[BUFFER];
                     ssize_t n=recv(c.fd,morrocoyBuffer,sizeof morrocoyBuffer,0);
                     if(n>0){
                         c.activity=std::chrono::steady_clock::now();
